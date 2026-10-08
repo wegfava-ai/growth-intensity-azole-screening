@@ -1,0 +1,11 @@
+variable,type,required,description,example,notes
+isolate_id,character,yes,Unique de-identified isolate identifier,EXAMPLE_001,Must not contain direct participant identifiers
+cluster_id,character,yes,De-identified citizen/source cluster for bootstrap,CLUSTER_001,Repeated isolates from same cluster share the same value
+country,character,yes for geographic analyses,Country of collection,Brazil,Use consistent English country names
+collection_year,integer,no,Year of collection,2024,Optional descriptive metadata
+score_itc,integer 0-3,when screening available,Itraconazole agar growth score,1,0=no growth; 1=weak; 2=reduced; 3=uninhibited
+score_vrc,integer 0-3,when screening available,Voriconazole agar growth score,0,0=no growth; 1=weak; 2=reduced; 3=uninhibited
+score_pos,integer 0-3,when screening available,Posaconazole agar growth score,0,0=no growth; 1=weak; 2=reduced; 3=uninhibited
+mic_itc,character/numeric,when MIC available,"Itraconazole MIC, mg/L",2,Numeric or censored string such as >8 or <=0.03
+mic_vrc,character/numeric,when MIC available,"Voriconazole MIC, mg/L",0.5,Numeric or censored string
+mic_pos,character/numeric,when MIC available,"Posaconazole MIC, mg/L",0.25,Numeric or censored string; 0.25 resolved using ITC class

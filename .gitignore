@@ -1,0 +1,42 @@
+# Real/private analysis data
+data/analysis_input.csv
+data/*.xlsx
+data/*.xls
+data/*.rds
+data/*.sav
+data/*.dta
+data/*.sas7bdat
+data/*REDCap*
+data/*redcap*
+data/*TSA*
+data/*tsa*
+
+# Shapefiles and geospatial sidecars
+data/shapefile/*.shp
+data/shapefile/*.dbf
+data/shapefile/*.shx
+data/shapefile/*.prj
+data/shapefile/*.cpg
+data/shapefile/*.qmd
+data/shapefile/*.sbn
+data/shapefile/*.sbx
+
+# Generated output
+output/tables/*
+output/figures/*
+output/*.xlsx
+output/*.txt
+!output/tables/.gitkeep
+!output/figures/.gitkeep
+
+# R/RStudio
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/

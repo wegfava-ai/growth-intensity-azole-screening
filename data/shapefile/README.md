@@ -2,7 +2,7 @@
 
 The original shapefile used during manuscript development is not distributed in this repository.
 
-To reproduce the supplementary map, supply a country-level Latin America shapefile for which you have permission to use and redistribute locally.
+To reproduce Supplementary Figure S2 (the geographic map), supply a country-level Latin America shapefile for which you have permission to use and redistribute locally.
 
 Place all components in this folder, for example:
 

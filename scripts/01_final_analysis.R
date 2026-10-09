@@ -18,9 +18,10 @@
 #   data/README.md
 #
 # IMPORTANT:
-# The input must represent the FULL screening cohort, including
-# isolates without MIC verification. A paired-only dataset cannot
-# reproduce verification rates or the STARD flow.
+# To reproduce the manuscript flow counts, the input should represent
+# the full project-level analysis dataset, including records that do not
+# have complete paired screening and MIC results. The primary and
+# secondary score analyses are performed only on eligible paired records.
 #
 # Primary analysis:
 #   exact growth score (0-3) -> WT/NWT distribution
@@ -32,9 +33,9 @@
 #   score-based AUC with cluster bootstrap
 #   score contrasts with cluster-bootstrap risk differences
 #
-# Because reference MIC testing was differentially performed after
-# screening in the study workflow, conventional diagnostic metrics
-# are SECONDARY and are not unbiased population accuracy estimates.
+# Conventional screening-performance metrics are SECONDARY and describe
+# only the paired analysis set; they should not be interpreted as
+# population-level diagnostic-accuracy estimates.
 # ============================================================
 
 # ----------------------------
@@ -56,12 +57,10 @@ CHECK_PUBLISHED_COUNTS <- FALSE
 EXPECTED_COUNTS <- list(
   records = 2779L,
   complete_screening = 2370L,
-  screen_positive = 224L,
-  screen_000 = 2146L,
+  incomplete_screening = 409L,
   complete_mic = 370L,
   paired = 238L,
-  paired_positive = 224L,
-  paired_000 = 14L
+  complete_mic_without_complete_screening = 132L
 )
 
 # ----------------------------
@@ -424,106 +423,51 @@ dat <- dat |>
     ),
     screen_complete3 = !is.na(score_itc) & !is.na(score_vrc) & !is.na(score_pos),
     mic_complete3 = !is.na(mic_itc) & !is.na(mic_vrc) & !is.na(mic_pos),
-    refclass_complete3 = !is.na(itc_class) & !is.na(vrc_class) & !is.na(pos_class),
-    screen_any_positive = screen_complete3 &
-      (score_itc >= 1 | score_vrc >= 1 | score_pos >= 1),
-    screen_all_zero = screen_complete3 &
-      score_itc == 0 & score_vrc == 0 & score_pos == 0
+    refclass_complete3 = !is.na(itc_class) & !is.na(vrc_class) & !is.na(pos_class)
   )
 
 # ----------------------------
-# 5. STARD FLOW AND VERIFICATION
+# 5. STUDY FLOW COUNTS
 # ----------------------------
 
+# These aggregate counts reproduce the manuscript study-flow summary.
 flow_counts <- tibble(
   step = c(
     "Project records with isolate ID",
     "Complete 3-azole screening",
-    "Screen-positive in >=1 azole",
-    "Screen 0/0/0",
+    "No complete 3-azole screening",
     "Complete 3-azole MIC",
-    "Paired complete screening + MIC",
-    "Paired screen-positive",
-    "Paired screen 0/0/0",
-    "Complete MIC but incomplete 3-azole screening",
-    "Complete screening but incomplete 3-azole MIC"
+    "Complete 3-azole MIC without complete 3-azole screening",
+    "Final paired complete screening + MIC"
   ),
   n = c(
     nrow(dat),
     sum(dat$screen_complete3),
-    sum(dat$screen_any_positive),
-    sum(dat$screen_all_zero),
+    sum(!dat$screen_complete3),
     sum(dat$mic_complete3),
-    sum(dat$screen_complete3 & dat$mic_complete3),
-    sum(dat$screen_any_positive & dat$mic_complete3),
-    sum(dat$screen_all_zero & dat$mic_complete3),
-    sum(!dat$screen_complete3 & dat$mic_complete3),
-    sum(dat$screen_complete3 & !dat$mic_complete3)
+    sum(dat$mic_complete3 & !dat$screen_complete3),
+    sum(dat$screen_complete3 & dat$mic_complete3 & dat$refclass_complete3)
   )
 )
 
-readr::write_csv(flow_counts, "output/tables/STARD_flow_counts.csv")
+readr::write_csv(flow_counts, "output/tables/study_flow_counts.csv")
 
 if (CHECK_PUBLISHED_COUNTS) {
   check_count(nrow(dat), EXPECTED_COUNTS$records, "records")
   check_count(sum(dat$screen_complete3), EXPECTED_COUNTS$complete_screening, "complete screening")
-  check_count(sum(dat$screen_any_positive), EXPECTED_COUNTS$screen_positive, "screen positive")
-  check_count(sum(dat$screen_all_zero), EXPECTED_COUNTS$screen_000, "screen 0/0/0")
+  check_count(sum(!dat$screen_complete3), EXPECTED_COUNTS$incomplete_screening, "incomplete screening")
   check_count(sum(dat$mic_complete3), EXPECTED_COUNTS$complete_mic, "complete MIC")
-  check_count(sum(dat$screen_complete3 & dat$mic_complete3), EXPECTED_COUNTS$paired, "paired")
-  check_count(sum(dat$screen_any_positive & dat$mic_complete3), EXPECTED_COUNTS$paired_positive, "paired positive")
-  check_count(sum(dat$screen_all_zero & dat$mic_complete3), EXPECTED_COUNTS$paired_000, "paired 0/0/0")
-}
-
-verification_overall <- dat |>
-  dplyr::filter(screen_complete3) |>
-  dplyr::mutate(
-    screening_group = dplyr::case_when(
-      screen_any_positive ~ "Growth in >=1 azole",
-      screen_all_zero ~ "0/0/0",
-      TRUE ~ "Other"
-    ),
-    verified_complete_mic = mic_complete3
-  ) |>
-  dplyr::group_by(screening_group) |>
-  dplyr::summarise(
-    screened_n = dplyr::n(),
-    verified_n = sum(verified_complete_mic),
-    verification_rate = verified_n / screened_n,
-    .groups = "drop"
+  check_count(
+    sum(dat$mic_complete3 & !dat$screen_complete3),
+    EXPECTED_COUNTS$complete_mic_without_complete_screening,
+    "complete MIC without complete screening"
   )
-
-readr::write_csv(
-  verification_overall,
-  "output/tables/verification_rate_overall_screening_rule.csv"
-)
-
-screen_long_total <- dplyr::bind_rows(
-  dat |> dplyr::filter(screen_complete3) |>
-    dplyr::transmute(isolate_id, azole = "Itraconazole",
-                     score = as.integer(score_itc), mic_complete3),
-  dat |> dplyr::filter(screen_complete3) |>
-    dplyr::transmute(isolate_id, azole = "Voriconazole",
-                     score = as.integer(score_vrc), mic_complete3),
-  dat |> dplyr::filter(screen_complete3) |>
-    dplyr::transmute(isolate_id, azole = "Posaconazole",
-                     score = as.integer(score_pos), mic_complete3)
-)
-
-verification_by_score <- screen_long_total |>
-  dplyr::group_by(azole, score) |>
-  dplyr::summarise(
-    screened_n = dplyr::n(),
-    verified_n = sum(mic_complete3),
-    verification_rate = verified_n / screened_n,
-    .groups = "drop"
-  ) |>
-  dplyr::arrange(azole, score)
-
-readr::write_csv(
-  verification_by_score,
-  "output/tables/verification_rate_by_exact_score.csv"
-)
+  check_count(
+    sum(dat$screen_complete3 & dat$mic_complete3 & dat$refclass_complete3),
+    EXPECTED_COUNTS$paired,
+    "paired"
+  )
+}
 
 # ----------------------------
 # 6. PAIRED ANALYSIS DATASET
@@ -721,14 +665,6 @@ discordance_all <- paired_long |>
       !positive_ge1 & !truth_nwt ~ "TN",
       !positive_ge1 & truth_nwt ~ "FN",
       TRUE ~ NA_character_
-    ),
-    key_score_pattern = dplyr::case_when(
-      score == 0 & reference == "NWT" ~ "Score 0 / NWT",
-      score == 1 & reference == "WT" ~ "Score 1 / WT",
-      score == 1 & reference == "NWT" ~ "Score 1 / NWT",
-      score >= 2 & reference == "WT" ~ "Score >=2 / WT",
-      score >= 2 & reference == "NWT" ~ "Score >=2 / NWT",
-      TRUE ~ NA_character_
     )
   )
 
@@ -765,30 +701,7 @@ readr::write_csv(
 # study data. Aggregate tables above fully reproduce manuscript summaries.
 
 # ----------------------------
-# 12. DESCRIPTIVE INFLUENCE OF PAIRED 0/0/0 ISOLATES
-# ----------------------------
-
-paired_000 <- paired |> dplyr::filter(screen_all_zero)
-
-influence_000_summary <- tibble(
-  dataset = c(
-    "All paired isolates",
-    "Paired excluding all 0/0/0 isolates"
-  ),
-  n = c(nrow(paired), nrow(paired) - nrow(paired_000)),
-  n_overall_NWT = c(
-    sum(paired$overall_class == "NWT"),
-    sum(paired$overall_class == "NWT" & !paired$screen_all_zero)
-  )
-)
-
-readr::write_csv(
-  influence_000_summary,
-  "output/tables/Sensitivity_influence_000_summary.csv"
-)
-
-# ----------------------------
-# 13. AUDITS AND CONSOLIDATED WORKBOOK
+# 12. AUDITS AND CONSOLIDATED WORKBOOK
 # ----------------------------
 
 reference_counts <- tibble(
@@ -820,19 +733,16 @@ readr::write_csv(reference_counts, "output/tables/reference_classification_count
 readr::write_csv(score_counts, "output/tables/exact_score_counts.csv")
 
 final_tables <- list(
-  STARD_flow = flow_counts,
-  verification_overall = verification_overall,
-  verification_by_score = verification_by_score,
+  study_flow = flow_counts,
   Table1_country = table1_country,
   score_x_reference = score_reference_counts,
   NWT_by_score_exactCI = nwt_by_score,
+  score_contrasts_RD = score_contrasts,
+  score1_FP_contribution = score1_fp,
   perf_cluster_boot = performance_cluster,
   perf_formatted = performance_wide,
+  cross_classification_ge1 = discordance_summary,
   AUC_cluster_boot = auc_cluster,
-  score_contrasts_RD = score_contrasts,
-  discordance_summary = discordance_summary,
-  score1_FP_contribution = score1_fp,
-  influence_000_summary = influence_000_summary,
   reference_counts = reference_counts,
   score_counts = score_counts
 )
@@ -840,37 +750,6 @@ final_tables <- list(
 writexl::write_xlsx(
   final_tables,
   path = "output/LATAsp_reproducibility_tables.xlsx"
-)
-
-# Verification-rate figure
-fig_verification <- verification_by_score |>
-  dplyr::mutate(
-    azole = factor(
-      azole,
-      levels = c("Itraconazole", "Voriconazole", "Posaconazole")
-    )
-  ) |>
-  ggplot(aes(x = factor(score), y = verification_rate)) +
-  geom_col() +
-  facet_wrap(~ azole, nrow = 1) +
-  scale_y_continuous(
-    labels = scales::percent_format(accuracy = 1),
-    limits = c(0, 1)
-  ) +
-  labs(
-    x = "Growth score",
-    y = "Proportion with complete MIC verification",
-    title = "Reference-method verification by agar growth score"
-  ) +
-  theme_classic(base_size = 11)
-
-ggsave(
-  "output/figures/verification_rate_by_score.png",
-  fig_verification, width = 10, height = 4.5, dpi = 600, bg = "white"
-)
-ggsave(
-  "output/figures/verification_rate_by_score.pdf",
-  fig_verification, width = 10, height = 4.5
 )
 
 log_lines <- c(
@@ -885,8 +764,8 @@ log_lines <- c(
   paste0("Final paired dataset: ", nrow(paired)),
   "",
   "Primary: exact score 0-3 x WT/NWT with exact binomial 95% CI.",
-  "Secondary: diagnostic performance, AUC and score contrasts with cluster bootstrap.",
-  "Limitation: secondary diagnostic metrics are subject to partial verification bias."
+  "Secondary: screening performance, AUC and score contrasts with cluster bootstrap.",
+  "Secondary performance estimates describe the paired analysis set only."
 )
 
 writeLines(log_lines, "output/analysis_log.txt")

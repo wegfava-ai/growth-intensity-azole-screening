@@ -148,12 +148,12 @@ p_map <- ggplot() +
 dir.create(file.path("output", "figures"), recursive = TRUE, showWarnings = FALSE)
 
 ggsave(
-  "output/figures/Supplementary_Figure_S3_map_WT_NWT.png",
+  "output/figures/Supplementary_Figure_S2_map_WT_NWT.png",
   p_map, width = 9, height = 8, dpi = 600, bg = "white"
 )
 
 ggsave(
-  "output/figures/Supplementary_Figure_S3_map_WT_NWT.pdf",
+  "output/figures/Supplementary_Figure_S2_map_WT_NWT.pdf",
   p_map, width = 9, height = 8, bg = "white"
 )
 

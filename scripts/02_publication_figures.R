@@ -5,10 +5,14 @@
 # Requires outputs from:
 #   scripts/01_final_analysis.R
 #
-# Produces:
-#   Figure_1_NWT_proportion_by_score
-#   Figure_2_heatmap_score_azole_NWT
-#   Supplementary_Figure_S1_alluvial_score_to_WT_NWT
+# Produces manuscript figures generated from analysis outputs:
+#   Figure_2_NWT_proportion_by_score
+#   Figure_3_heatmap_score_azole_NWT
+#   Supplementary_Figure_S3_alluvial_score_to_WT_NWT
+#
+# Figure 1 is the study-flow diagram and Supplementary Figure S1
+# contains representative laboratory photographs; neither is generated
+# by this script.
 # ============================================================
 
 pkgs <- c("ggplot2", "dplyr", "tidyr", "scales", "viridis", "ggalluvial", "grid")
@@ -125,7 +129,7 @@ fig1 <- ggplot(
 
 save_publication(
   fig1,
-  "Figure_1_NWT_proportion_by_score",
+  "Figure_2_NWT_proportion_by_score",
   width = 9.0,
   height = 4.65
 )
@@ -170,7 +174,7 @@ fig2 <- ggplot(
 
 save_publication(
   fig2,
-  "Figure_2_heatmap_score_azole_NWT",
+  "Figure_3_heatmap_score_azole_NWT",
   width = 7.6,
   height = 4.75
 )
@@ -238,7 +242,7 @@ fig3 <- ggplot(
 
 save_publication(
   fig3,
-  "Supplementary_Figure_S1_alluvial_score_to_WT_NWT",
+  "Supplementary_Figure_S3_alluvial_score_to_WT_NWT",
   width = 10.0,
   height = 5.45
 )

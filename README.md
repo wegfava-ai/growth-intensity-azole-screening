@@ -189,9 +189,8 @@ This reduces the risk of accidentally committing restricted study data.
 
 The R scripts used for data processing, statistical analyses, and figure generation are publicly available in this repository. The original study data may be shared upon reasonable request to the corresponding author.
 
-## License
-
-No software license is currently included. Add a license only after the authors and institutions have determined the intended reuse terms.
+## AI-assisted review
+Artificial intelligence tools, including OpenAI ChatGPT (GPT-5.6 Sol), were used to assist with review of the R scripts, including checks for code organization, consistency, documentation, and reproducibility. All analytical decisions, statistical methods, interpretation of results, and final verification of the code and outputs were performed by the authors.
 
 ## Citation
 
